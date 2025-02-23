@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Desafío de Pronunciación en Español ✨</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .frase {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .feedback {
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .correctas {
+            color: green;
+        }
+        .incorrectas {
+            color: red;
+        }
+        .progreso {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .barra-progreso {
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Desafío de Pronunciación en Español ✨</h1>
+        <div class="frase" id="frase"></div>
+        <button onclick="verificarPronunciacion()">Verificar Pronunciación</button>
+        <div class="feedback" id="feedback"></div>
+        <div class="progreso">
+            <div class="barra-progreso" id="barra-progreso"></div>
+        </div>
+        <div>
+            <span class="correctas" id="correctas">Correctas: 0</span>
+            <span class="incorrectas" id="incorrectas">Incorrectas: 0</span>
+        </div>
+    </div>
+
+<script>
+    const frases = [
+        "El sol brilla en el cielo.",
+        "Me gusta leer libros interesantes.",
+        "Ella come una manzana roja.",
+        "Ellos juegan al fútbol en el parque.",
+        "Voy a la escuela todos los días.",
+        "Estamos aprendiendo español.",
+        "El gato duerme en el sofá.",
+        "Tengo un coche azul.",
+        "Ella canta muy bien.",
+        "Ellos ven una película en casa.",
+        "Él cocina la cena esta noche.",
+        "Vamos al mercado los sábados.",
+        "El perro ladra fuerte.",
+        "Me gusta tomar café por la mañana.",
+        "Ella escribe una carta larga.",
+        "Ellos bailan en la fiesta.",
+        "Él monta en bicicleta al trabajo.",
+        "Escuchamos música clásica.",
+        "El bebé llora por la noche.",
+        "Leo el periódico en la sala.",
+        "Ella pinta un cuadro bonito.",
+        "Ellos nadan en la piscina.",
+        "Él toca la guitarra muy bien.",
+        "Comemos tacos los viernes.",
+        "El pájaro vuela alto.",
+        "Camino al parque cada tarde.",
+        "Ella habla por teléfono ahora.",
+        "Ellos corren en la playa.",
+        "Él bebe agua fría.",
+        "Estudiamos para el examen final.",
+        "El profesor escribe en la pizarra.",
+        "Limpio mi habitación los domingos.",
+        "Ella compra comida en el mercado.",
+        "Ellos visitan a sus abuelos.",
+        "Él arregla el coche viejo.",
+        "Plantamos flores en el jardín.",
+        "Los niños juegan en el patio.",
+        "Cocino el desayuno temprano.",
+        "Ella lava los platos después de comer.",
+        "Ellos construyen un castillo de arena.",
+        "Él lee un libro interesante.",
+        "Miramos el atardecer juntos.",
+        "El tren llega a la estación.",
+        "Espero el autobús en la parada.",
+        "Ella cepilla su cabello largo.",
+        "Ellos juegan videojuegos toda la noche.",
+        "Él toma una ducha rápida.",
+        "Tenemos un picnic en el campo.",
+        "El reloj hace tic tac.",
+        "Escribo un correo a mi amigo.",
+        "La luna brilla en la noche.",
+        "Corro cinco kilómetros cada día.",
+        "Ella dibuja un paisaje hermoso.",
+        "Ellos cantan canciones populares.",
+        "Él nada en el lago tranquilo.",
+        "Pintamos la casa de blanco.",
+        "Los pájaros cantan al amanecer.",
+        "Compro pan fresco en la panadería.",
+        "Ella baila con mucha energía.",
+        "Ellos caminan por el bosque."
+    ];
+
+    let fraseActual = "";
+    let indiceFrase = 0;
+    let correctas = 0;
+    let incorrectas = 0;
+    const totalFrases = frases.length;
+
+    // Crear una instancia única de SpeechRecognition
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-MX'; // Español de México
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false; // No escucha continuamente
+
+    // Variable para rastrear si ya se pidió permiso
+    let microphonePermissionGranted = false;
+
+    // Configurar manejadores de eventos
+    recognition.onresult = function(event) {
+        const pronunciadoOriginal = event.results[0][0].transcript;
+
+        let pronunciado = pronunciadoOriginal.toLowerCase()
+            .replace(/[^a-z0-9\sáéíóúñ]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        let fraseEsperada = fraseActual.toLowerCase()
+            .replace(/[^a-z0-9\sáéíóúñ]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        console.log("Original pronunciado: '" + pronunciadoOriginal + "'");
+        console.log("Pronunciado normalizado: '" + pronunciado + "' (longitud: " + pronunciado.length + ")");
+        console.log("Esperado normalizado: '" + fraseEsperada + "' (longitud: " + fraseEsperada.length + ")");
+
+        if (pronunciado === fraseEsperada) {
+            correctas++;
+            document.getElementById("feedback").textContent = "✅ ¡Correcto! 🎉";
+            document.getElementById("feedback").style.color = "green";
+            indiceFrase++;
+            if (indiceFrase < totalFrases) {
+                setTimeout(mostrarFrase, 500);
+            } else {
+                document.getElementById("feedback").textContent = "🏆 ¡Has completado el juego!";
+                document.getElementById("frase").textContent = "";
+                document.querySelector("button").style.display = "none";
+            }
+        } else {
+            incorrectas++;
+            document.getElementById("feedback").textContent = `❌ Incorrecto. Dijiste: "${pronunciadoOriginal}" (Normalizado: "${pronunciado}") (Esperado: "${fraseEsperada}") [Longitudes: ${pronunciado.length} vs ${fraseEsperada.length}]`;
+            document.getElementById("feedback").style.color = "red";
+        }
+
+        document.getElementById("correctas").textContent = `Correctas: ${correctas}`;
+        document.getElementById("incorrectas").textContent = `Incorrectas: ${incorrectas}`;
+
+        const progreso = ((correctas + incorrectas) / totalFrases) * 100;
+        document.getElementById("barra-progreso").style.width = `${progreso}%`;
+    };
+
+    recognition.onerror = function(event) {
+        document.getElementById("feedback").textContent = "❌ Error en el reconocimiento de voz: " + event.error + ". Intenta de nuevo.";
+        document.getElementById("feedback").style.color = "red";
+        console.error("Error en reconocimiento:", event.error);
+    };
+
+    recognition.onend = function() {
+        console.log("Reconocimiento detenido. Permiso sigue activo: " + microphonePermissionGranted);
+    };
+
+    recognition.onstart = function() {
+        console.log("Reconocimiento iniciado");
+        microphonePermissionGranted = true; // Marcar que el permiso fue concedido
+    };
+
+    function mostrarFrase() {
+        fraseActual = frases[indiceFrase];
+        document.getElementById("frase").textContent = fraseActual;
+        document.getElementById("feedback").textContent = "";
+    }
+
+    function verificarPronunciacion() {
+        if (microphonePermissionGranted) {
+            console.log("Iniciando reconocimiento con permiso ya concedido");
+            recognition.start();
+        } else {
+            // Solicitar permiso la primera vez
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then((stream) => {
+                    console.log("Permiso de micrófono concedido");
+                    microphonePermissionGranted = true;
+                    stream.getTracks().forEach(track => track.stop()); // Detener el stream inmediatamente
+                    recognition.start();
+                })
+                .catch((error) => {
+                    document.getElementById("feedback").textContent = "❌ No se pudo acceder al micrófono. Habilítalo en la configuración.";
+                    document.getElementById("feedback").style.color = "red";
+                    console.error("Error al solicitar permiso:", error);
+                });
+        }
+    }
+
+    mostrarFrase();
+</script>
+</body>
+</html>
